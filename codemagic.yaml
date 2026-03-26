@@ -51,8 +51,25 @@ workflows:
 
       - name: Export IPA
         script: |
-          xcode-project build-ipa \
-            --archive-path build/KokoroTestApp.xcarchive
+          cat > build/ExportOptions.plist << 'EOPLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>ad-hoc</string>
+              <key>teamID</key>
+              <string>J2WC76CMRA</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+          </dict>
+          </plist>
+          EOPLIST
+
+          xcodebuild -exportArchive \
+            -archivePath build/KokoroTestApp.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist build/ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
