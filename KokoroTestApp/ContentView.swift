@@ -1,11 +1,7 @@
 import SwiftUI
 
-/// This view provides a simple interface for text-to-speech generation.
 struct ContentView: View {
-    /// The view model that manages the TTS engine and audio playback
     @ObservedObject var viewModel: TestAppModel
-
-    /// The text input from the user that will be converted to speech
     @State private var inputText: String = ""
 
     var body: some View {
@@ -14,7 +10,7 @@ struct ContentView: View {
             case .notStarted, .loadingModel:
                 VStack(spacing: 16) {
                     ProgressView()
-                    Text("Loading model...")
+                    Text(viewModel.loadingState == .notStarted ? "Starting..." : "Loading model...")
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -113,8 +109,4 @@ struct ContentView: View {
         .background(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-}
-
-#Preview {
-    ContentView(viewModel: TestAppModel())
 }
