@@ -1,0 +1,64 @@
+workflows:
+  kokoro-adhoc:
+    name: KokoroTestApp Ad Hoc
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: codemagic-asc
+
+    environment:
+      xcode: latest
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.brent.kokoro-test
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    scripts:
+      - name: Set up keychain
+        script: keychain initialize
+
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+
+      - name: Use provisioning profiles
+        script: xcode-project use-profiles
+
+      - name: Resolve SPM dependencies
+        script: |
+          xcodebuild -resolvePackageDependencies \
+            -project KokoroTestApp.xcodeproj \
+            -scheme KokoroTestApp
+
+      - name: Build and archive
+        script: |
+          xcodebuild -project KokoroTestApp.xcodeproj \
+            -scheme KokoroTestApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -archivePath build/KokoroTestApp.xcarchive \
+            archive
+
+      - name: Export IPA
+        script: |
+          xcode-project build-ipa \
+            --archive-path build/KokoroTestApp.xcarchive
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      email:
+        recipients:
+          - brent.beeltje@gmail.com
+        notify:
+          success: true
+          failure: true
