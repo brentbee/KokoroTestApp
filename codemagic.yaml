@@ -51,20 +51,37 @@ workflows:
 
       - name: Export IPA
         script: |
-          cat > build/ExportOptions.plist << 'EOPLIST'
+          # Find the provisioning profile name
+          PROFILE_NAME=""
+          for f in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision; do
+            PNAME=$(security cms -D -i "$f" 2>/dev/null | plutil -extract Name raw -)
+            echo "Found profile: $PNAME"
+            PROFILE_NAME="$PNAME"
+          done
+
+          echo "Using profile: $PROFILE_NAME"
+
+          cat > build/ExportOptions.plist << EOPLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>ad-hoc</string>
+              <string>release-testing</string>
               <key>teamID</key>
               <string>J2WC76CMRA</string>
               <key>signingStyle</key>
-              <string>automatic</string>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.brent.kokoro-test</key>
+                  <string>${PROFILE_NAME}</string>
+              </dict>
           </dict>
           </plist>
           EOPLIST
+
+          cat build/ExportOptions.plist
 
           xcodebuild -exportArchive \
             -archivePath build/KokoroTestApp.xcarchive \
