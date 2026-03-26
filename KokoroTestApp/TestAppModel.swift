@@ -29,7 +29,6 @@ private final class DownloadProgressTracker: NSObject, URLSessionDownloadDelegat
     }
 }
 
-/// The view model that manages text-to-speech functionality using the Kokoro TTS engine.
 final class TestAppModel: ObservableObject {
     var kokoroTTSEngine: KokoroTTS?
     var audioEngine: AVAudioEngine?
@@ -43,7 +42,7 @@ final class TestAppModel: ObservableObject {
 
     var timer: Timer?
 
-    private static let modelURL = URL(string: "https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/kokoro-v1_0.safetensors")!
+    private static let modelURL = URL(string: "https://media.githubusercontent.com/media/mlalma/KokoroTestApp/main/Resources/kokoro-v1_0.safetensors")!
     private static let modelFilename = "kokoro-v1_0.safetensors"
 
     private var modelCachePath: URL {
@@ -52,8 +51,6 @@ final class TestAppModel: ObservableObject {
     }
 
     init() {
-        // Deliberately minimal init - no framework initialization here
-        // Everything deferred to downloadAndLoadModel() via Task
         print("[KokoroTest] TestAppModel init - starting download task")
         Task { await downloadAndLoadModel() }
     }
@@ -69,7 +66,7 @@ final class TestAppModel: ObservableObject {
         }
 
         loadingState = .downloading(progress: 0)
-        print("[KokoroTest] Starting download from HuggingFace")
+        print("[KokoroTest] Starting download (~312 MB)")
 
         do {
             let tracker = DownloadProgressTracker { [weak self] progress in
@@ -101,7 +98,7 @@ final class TestAppModel: ObservableObject {
             print("[KokoroTest] Model saved, size: \(fileSize) bytes")
 
             if fileSize < 1_000_000 {
-                loadingState = .error("Downloaded file too small (\(fileSize) bytes) - likely not a valid model")
+                loadingState = .error("Downloaded file too small (\(fileSize) bytes) - not a valid model")
                 try? FileManager.default.removeItem(at: modelCachePath)
                 return
             }
@@ -117,16 +114,13 @@ final class TestAppModel: ObservableObject {
         loadingState = .loadingModel
         print("[KokoroTest] Loading model from disk...")
 
-        // Configure MLX GPU settings
         GPU.set(cacheLimit: 50 * 1024 * 1024)
         GPU.set(memoryLimit: 900 * 1024 * 1024)
         print("[KokoroTest] GPU limits configured")
 
-        // Initialize TTS engine
         kokoroTTSEngine = KokoroTTS(modelPath: modelCachePath)
         print("[KokoroTest] KokoroTTS engine initialized")
 
-        // Load voices from bundle
         guard let voiceFilePath = Bundle.main.url(forResource: "voices", withExtension: "npz") else {
             print("[KokoroTest] ERROR: voices.npz not found in bundle!")
             loadingState = .error("voices.npz not found in app bundle")
@@ -146,7 +140,6 @@ final class TestAppModel: ObservableObject {
         selectedVoice = voiceNames.first ?? ""
         print("[KokoroTest] Loaded \(voiceNames.count) voices, selected: \(selectedVoice)")
 
-        // Set up audio engine
         setupAudioEngine()
 
         loadingState = .ready
