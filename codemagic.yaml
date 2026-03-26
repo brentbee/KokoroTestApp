@@ -1,7 +1,7 @@
 workflows:
   kokoro-adhoc:
     name: KokoroTestApp Ad Hoc
-    max_build_duration: 60
+    max_build_duration: 90
     instance_type: mac_mini_m2
 
     integrations:
@@ -21,6 +21,9 @@ workflows:
           include: true
 
     scripts:
+      - name: Download Metal Toolchain
+        script: xcodebuild -downloadComponent MetalToolchain
+
       - name: Set up keychain
         script: keychain initialize
 
